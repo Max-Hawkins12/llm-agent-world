@@ -1,13 +1,20 @@
 # Project Overview
 
-This project aims to place an LLM agent inside a 2d world that it can perceive and navigate in order to reach a goal.
+This project aims to place an LLM agent inside a 2D world that it can perceive and navigate in order to reach a goal.
 
-# Instalation
+# Installation
+
+1. Create and activate your Python virtual environment.
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
 
 # Running
 
-# Architecture
+Start the grid game with:
 
-# Envioronment Design
-
-# Agent Design
+```bash
+python main.py
+```
