@@ -1,5 +1,4 @@
-from enum import Enum, IntEnum
-from dataclasses import dataclass
+from enum import Enum
 
 
 class MobPlacement(Enum):
@@ -12,28 +11,17 @@ class MobMovePattern(Enum):
     LINEAR = "linear"
 
 
-class AgentType(IntEnum):
-    HUMAN = 0
-    LLM_FULL = 1
-    LLM_LOCAL = 2
-    LLM_LOCAL_MEMORY = 3
+class AgentType(Enum):
+    HUMAN = "human"
+    LLM_OBJECTIVE = "llm_objective_oriented"
 
     @property
     def display_name(self) -> str:
         names = {
             AgentType.HUMAN: "Human",
-            AgentType.LLM_FULL: "LLM Full",
-            AgentType.LLM_LOCAL: "LLM Local",
-            AgentType.LLM_LOCAL_MEMORY: "LLM Local + Memory",
+            AgentType.LLM_OBJECTIVE: "LLM - Objective Oriented",
         }
         return names[self]
-
-    @property
-    def requires_memory(self) -> bool:
-        if self == self.LLM_LOCAL_MEMORY:
-            return True
-        else:
-            False
 
 
 class GameOptions:

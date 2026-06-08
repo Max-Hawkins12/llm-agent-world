@@ -1,7 +1,7 @@
 import pygame
 
 from src.agents.agent import Agent, AgentResponse
-from src.game_flow.enums import GameState, EndState
+from src.game_flow.enums import GameState
 from src.game_flow.agent_factory import AgentBuilder
 from src.environment.game import Game
 from src.ui.menu import StartMenu

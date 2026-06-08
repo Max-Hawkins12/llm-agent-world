@@ -2,28 +2,24 @@ from pathlib import Path
 from datetime import datetime
 
 from src.game_flow.enums import EndState
-from src.game_options import AgentType
 from src.actions import GameAction
 
 
 class RunLogger:
-    def __init__(self, model_name: str, agent_type: AgentType):
-        Path(f"logs/{agent_type.display_name}").mkdir(exist_ok=True)
+    def __init__(self, model_name: str):
+        Path(f"logs").mkdir(exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-        filename = f"{model_name}-{agent_type.display_name}-{timestamp}.log"
-        self.log_path = Path(f"logs/{agent_type.display_name}") / filename
+        filename = f"{model_name}-{timestamp}.log"
+        self.log_path = Path(f"logs") / filename
 
-        self.make_log_file(model_name, agent_type, timestamp)
+        self.make_log_file(model_name, timestamp)
 
-    def make_log_file(
-        self, model_name: str, agent_type: AgentType, timestamp: str
-    ) -> None:
+    def make_log_file(self, model_name: str, timestamp: str) -> None:
         header = f"""
 ========================================
 MODEL: {model_name}
-OBSERVATION LEVEL: {agent_type.display_name}
 STARTED AT: {timestamp}
 ========================================
 

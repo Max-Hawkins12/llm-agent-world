@@ -11,4 +11,4 @@ class AgentBuilder:
         if self.agent_type == AgentType.HUMAN:
             return HumanAgent()
         else:
-            return LLMAgent(self.agent_type)
+            return LLMAgent()

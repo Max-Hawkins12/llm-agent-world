@@ -52,6 +52,7 @@ class Game:
             self.action_outcome.outcome = (
                 "You did not move, there is a mob there and you have no weapon."
             )
+
             return
 
         self.agent.move_to(target_x, target_y)
@@ -77,8 +78,11 @@ class Game:
             self.agent.has_weapon = True
 
     def resolve_goal_reached(self) -> None:
-        if self.agent.position() == self.goal.position() and not self.goal.locked:
-            self.finished = True
+        if self.agent.position() == self.goal.position():
+            if not self.goal.locked:
+                self.finished = True
+            else:
+                self.action_outcome.outcome = f"You moved into the goal tile, but the goal is locked becuase {self.total_alive_mobs()} are still alive."
 
     def move_mobs(self) -> None:
         for mob in self.mobs:
@@ -122,3 +126,9 @@ class Game:
 
     def total_alive_mobs(self) -> int:
         return len([m for m in self.mobs if m.alive])
+
+    def return_previous_action_outcome(self) -> dict:
+        return {
+            "action": self.action_outcome.action_name,
+            "outcome": self.action_outcome.outcome,
+        }
