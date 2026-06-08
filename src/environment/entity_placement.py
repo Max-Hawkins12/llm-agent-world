@@ -1,40 +1,55 @@
 import random
 from typing import List, Optional, Tuple
 
-from src.game_options import GameSettings, EntityPlacement, MobMovePattern
+from src.game_options import GameSettings, MobPlacement, MobMovePattern
 from src.environment.entities import Weapon, Goal, Agent, Mob
 
 
 def place_entities(
     settings: GameSettings,
 ) -> Tuple[Agent, Goal, Optional[Weapon], Optional[List[Mob]]]:
-    if settings.entity_placement == EntityPlacement.RANDOM:
+    """
+    The agent is always at (0,0)
+    The goal is always at (width - 1, height - 1)
+    The weapon is either at (1, height - 3) or placed randomly
+    Mobs are either at:
+    - mob 1: (width - 2, 3)
+    - mob 2: (5, height - 3)
+    - mob 3: (width - 4, 1)
+    - mob 4: (1, height - 6)
+    Or placed randomly
+    """
+    if settings.mob_placement == MobPlacement.RANDOM.value:
         return random_placement(settings)
     else:
         return fixed_placement(settings)
 
 
 def random_placement(settings: GameSettings):
-    all_cells = [
+    grid_width = settings.grid_size[0]
+    grid_height = settings.grid_size[1]
+
+    reserved = {(0, 0), (grid_width - 1, grid_height - 1)}
+    available_cells = [
         (x, y)
-        for x in range(settings.grid_size[0])
-        for y in range(settings.grid_size[1])
+        for x in range(grid_width)
+        for y in range(grid_height)
+        if (x, y) not in reserved
     ]
-    random.shuffle(all_cells)
+    random.shuffle(available_cells)
 
     mobs = []
     for i in range(settings.mob_count):
-        x, y = all_cells[i]
+        x, y = available_cells[i]
         path = create_mob_path(settings, x, y)
         mobs.append(Mob(x, y, settings.mob_move_pattern, path))
 
-    agent = Agent(*all_cells[settings.mob_count], settings.has_weapon)
-    goal = Goal(*all_cells[settings.mob_count + 1])
-    weapon = (
-        Weapon(*all_cells[settings.mob_count + 2])
-        if settings.has_weapon == False
-        else None
-    )
+    weapon = None
+    if not settings.has_weapon:
+        weapon = Weapon(*available_cells[settings.mob_count])
+
+    agent = Agent(0, 0, settings.has_weapon)
+    goal = Goal(grid_width - 1, grid_height - 1)
 
     return (agent, goal, weapon, mobs)
 
@@ -79,21 +94,24 @@ def create_mob_path(settings: GameSettings, start_x: int, start_y: int):
         return None
 
     grid_width, grid_height = settings.grid_size
+    goal_position = (grid_width - 1, grid_height - 1)
     axes = ["x", "y"]
     random.shuffle(axes)
 
-    def build_line(axis: str) -> Optional[List[Tuple[int, int]]]:
+    def safe_distance(axis: str, direction: int) -> int:
         if axis == "x":
-            max_forward = grid_width - 1 - start_x
-            max_backward = start_x
-        else:
-            max_forward = grid_height - 1 - start_y
-            max_backward = start_y
+            if direction == 1 and start_y == goal_position[1]:
+                return min(grid_width - 1 - start_x, goal_position[0] - start_x - 1)
+            return grid_width - 1 - start_x if direction == 1 else start_x
+        if direction == 1 and start_x == goal_position[0]:
+            return min(grid_height - 1 - start_y, goal_position[1] - start_y - 1)
+        return grid_height - 1 - start_y if direction == 1 else start_y
 
+    def build_line(axis: str) -> Optional[List[Tuple[int, int]]]:
         directions = [1, -1]
         random.shuffle(directions)
         for direction in directions:
-            max_distance = max_forward if direction == 1 else max_backward
+            max_distance = safe_distance(axis, direction)
             if max_distance <= 0:
                 continue
 
@@ -104,6 +122,10 @@ def create_mob_path(settings: GameSettings, start_x: int, start_y: int):
                     path.append((start_x + direction * step, start_y))
                 else:
                     path.append((start_x, start_y + direction * step))
+
+            # ensure the goal square is never on the mob path
+            if any(position == goal_position for position in path):
+                continue
 
             path += list(reversed(path[:-1]))
             path.append((start_x, start_y))
