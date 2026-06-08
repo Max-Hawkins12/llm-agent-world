@@ -19,7 +19,7 @@ class AgentResponse:
         if self.reasoning:
             output += f"\nThis reasoning was given: {self.reasoning}"
         if self.failure:
-            output += f"\nIt resulted in this game result: {self.result.value}"
+            output += f"\nIt resulted in this game result: {self.failure.value}"
 
         return output
 

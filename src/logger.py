@@ -67,11 +67,22 @@ REASONING
 """
         self.write(turn_log, mode="a")
 
-    def log_ending(self, total_turns: int, end_state: EndState) -> None:
+    def log_ending(
+        self,
+        total_turns: int,
+        end_state: EndState,
+        total_input_tokens: int,
+        total_output_tokens: int,
+        # total_invalid_responses: int,
+        # total_invalid_moves: int,
+    ) -> None:
+        # TOTAL INVALID RESPONSES: {total_invalid_responses} TOTAL INVALID MOVES: {total_invalid_moves}
         end_log = f"""
 ========================================
 TOTAL TURNS: {total_turns}
 END STATE: {end_state.value}
+TOTAL INPUT TOKENS: {total_input_tokens}
+TOTAL OUTPUT TOKENS: {total_output_tokens}
 ========================================
 """
         self.write(end_log, mode="a")

@@ -9,8 +9,8 @@ class GameAction(Enum):
 
     QUIT = "quit"
 
-    WAIT = "wait"  # Default action when no other action is selected
-    INVALID = "invalid"  # TODO: Use when LLM generates an invalid action
+    WAIT = "wait"  # Default action when no other action is selected, for Human Agents
+    INVALID = "invalid"  # Used to keep track of any invalid actions made by the LLM
 
 
 class MenuAction(Enum):

@@ -31,8 +31,9 @@ class LLMAgent(Agent):
 
     def get_action(self, game: Game, events: list[Event]) -> AgentResponse:
         observation = create_game_observation(game)
+        previous_action = create_previous_action_outcome(game)
 
-        prompt = build_prompt(observation)
+        prompt = build_prompt(observation, previous_action)
 
         raw_response = self.client.query(prompt)
 
@@ -55,12 +56,17 @@ class LLMAgent(Agent):
         return outcome
 
     def game_ended_clean_up(self):
-        self.logger.log_ending(self.stats.turns, self.stats.end_state)
+        self.logger.log_ending(
+            self.stats.turns,
+            self.stats.end_state,
+            self.client.total_input_tokens,
+            self.client.total_output_tokens,
+        )
 
 
 class AgentStatistics:
 
-    TURNS_FOR_TIMEOUT = 25
+    TURNS_FOR_TIMEOUT = 50
     TOTAL_ALLOWED_INVALIDS = 10
     TOTAL_ALLOWED_CONSECUTIVE_INVALIDS = 3
 
@@ -97,30 +103,40 @@ class LLMClient:
         self.client = OpenAI()
         self.model = os.getenv("MODEL_NAME")
 
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+
     def query(self, prompt: str) -> str:
         response = self.client.responses.create(model=self.model, input=prompt)
+
+        self.total_input_tokens += response.usage.input_tokens
+        self.total_output_tokens += response.usage.output_tokens
 
         return response.output_text
 
 
-def build_prompt(observation) -> str:
+def build_prompt(observation: dict, previous_action: dict) -> str:
+    previous_action_text = json.dumps(previous_action, indent=4, sort_keys=True)
     observation_text = json.dumps(observation, indent=4, sort_keys=True)
 
-    return f"""You are an agent in a grid world.
+    return f"""You are an agent in a grid world. 
 The world contains:
 - A weapon
 - Mobs
-- A locked door
+- A locked goal
 
 You can defeat mobs by moving into them when you have the weapon.
 You cannot move into mobs without the weapon.
-You must defeat all mobs to open the door.
-A move up is (0, -1), a move down is (0, 1), a move left is (-1, 0), a move right is (1, 0)
+You must defeat all mobs to unlock the goal.
+The mobs will move one cell everytime you do.
+Do not try and predict a mobs movements.
 
-Goal:
+Plan:
 1. Obtain the weapon.
 2. Defeat all mobs.
-3. Reach the door.
+3. Reach the goal.
+
+You should only attempt a step once the previous one is complete.
 
 Available actions:
 - move_up
@@ -128,17 +144,26 @@ Available actions:
 - move_left
 - move_right
 
+Coordinate System:
+- Moving RIGHT increases x by 1
+- Moving LEFT decreases x by 1
+- Moving DOWN increases y by 1
+- Moving UP decreases y by 1
+
+Previous action:
+{previous_action_text}
+
 Current observation:
 {observation_text}
 
 Important rules:
 - Do not invent actions.
-- Return valid JSON only.
+- respond with valid JSON only.
 
 Response format:
 {{
-"action": "<action>",
-"reasoning": "<breif explanation>"
+    "action": "<action>",
+    "reasoning": "<breif explanation>"
 }}
 """
 
@@ -146,16 +171,26 @@ Response format:
 def parse_response(raw_response: str) -> Tuple[GameAction, str]:
     try:
         data = json.loads(raw_response)
+    except json.JSONDecodeError:
+        return (GameAction.INVALID, "ERROR: INVALID JSON")
 
-        action = data.get("action")
-        reasoning = data.get("reasoning")
+    action = data.get("action")
+    reasoning = data.get("reasoning")
 
-        if action is None:
-            return (GameAction.INVALID, reasoning)
+    if action is None:
+        return (GameAction.INVALID, "ERROR: NO ACTION")
 
+    try:
         return (GameAction(action), reasoning)
-    except (json.JSONDecodeError, ValueError):
-        return (GameAction.INVALID, reasoning)
+    except ValueError:
+        return (GameAction.INVALID, "ERROR: UNKOWN ACTION")
+
+
+def create_previous_action_outcome(game: Game) -> dict:
+    return {
+        "action": game.action_outcome.action_name,
+        "outcome": game.action_outcome.outcome,
+    }
 
 
 def create_game_observation(

@@ -1,10 +1,17 @@
 from typing import List, Optional
+from dataclasses import dataclass
 
 from src.environment.entities import GameEntity, Mob
 from src.environment.entity_placement import place_entities
 from src.environment.utils import is_within_bounds
 from src.actions import GameAction
 from src.game_options import GameSettings
+
+
+@dataclass
+class ActionOutcome:
+    action_name: str = ""
+    outcome: str = "This is the first move."
 
 
 class Game:
@@ -14,10 +21,16 @@ class Game:
 
         self.agent, self.goal, self.weapon, self.mobs = place_entities(settings)
 
+        self.action_outcome: ActionOutcome = ActionOutcome()
+
         self.finished = False
         self.update_goal_lock()
 
     def process_action(self, action: GameAction) -> None:
+
+        self.action_outcome.action_name = action.value
+        self.action_outcome.outcome = "This was action was invalid."  # This will be overwritten in any valid action
+
         match action:
             case GameAction.MOVE_UP:
                 self.try_move_agent(0, -1)
@@ -33,11 +46,16 @@ class Game:
         mob_at_target = self.get_mob_at(target_x, target_y)
 
         if not is_within_bounds(target_x, target_y, self.grid_width, self.grid_height):
+            self.action_outcome.outcome = "You did not move, there it is out of bounds."
             return
         elif mob_at_target and not self.agent.has_weapon:
+            self.action_outcome.outcome = (
+                "You did not move, there is a mob there and you have no weapon."
+            )
             return
 
         self.agent.move_to(target_x, target_y)
+        self.action_outcome.outcome = "You moved successfully."
 
         self.defeat_mob_at(mob_at_target)
         self.pick_up_weapon()

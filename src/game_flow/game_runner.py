@@ -71,6 +71,10 @@ class GameRunner:
             game=self.game,
         )
 
+        if agent_response.action.value != GameAction.WAIT.value:
+            print("-------------------")
+            print(agent_response)
+
         if agent_response.action == GameAction.QUIT:
             self.state = GameState.QUIT
             return
