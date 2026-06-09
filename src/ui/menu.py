@@ -41,13 +41,14 @@ class StartMenu:
     def __init__(self):
         self.options = {
             "agent_type": MenuOption("Agent Type", GameOptions.AGENT_TYPE, 1),
-            "mob_placement": MenuOption(
-                "Mob & Weapon Placement", GameOptions.MOB_PLACEMENT_OPTIONS
-            ),
-            "mob_count": MenuOption("Mob Count", GameOptions.MOB_COUNT_OPTIONS, 2),
-            "mob_move_pattern": MenuOption(
-                "Mob Behaviour", GameOptions.MOB_MOVE_PATTERNS
-            ),
+            # NOTE: The LLM was having issues with settings outside the default ones, so I have decided to only allow the default settings
+            # "mob_placement": MenuOption(
+            #    "Mob & Weapon Placement", GameOptions.MOB_PLACEMENT_OPTIONS
+            # ),
+            # "mob_count": MenuOption("Mob Count", GameOptions.MOB_COUNT_OPTIONS, 2),
+            # "mob_move_pattern": MenuOption(
+            #    "Mob Behaviour", GameOptions.MOB_MOVE_PATTERNS
+            # ),
         }
         self.option_keys = list(self.options)
         self.selected_index = 0
@@ -66,11 +67,14 @@ class StartMenu:
                 self.options[current_key].move_next()
 
     def build_game_settings(self) -> GameSettings:
+        """NOTE: SEE ABOVE
         return GameSettings(
             mob_placement=self.options["mob_placement"].selected_value,
             mob_count=self.options["mob_count"].selected_value,
             mob_move_pattern=self.options["mob_move_pattern"].selected_value,
         )
+        """
+        return GameSettings()
 
     @property
     def agent_type(self) -> AgentType:
