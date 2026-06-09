@@ -70,17 +70,21 @@ These logs demonstrate how the different world observations affected the agent's
 ## Design Iterations
 
 **Iteration 1 - Full Coordinate Observation**
+
 I initially provided the LLM with the full coordinates of everything in the environment. My thought was that this mimics how the game logic works internally and provides complete information about the game state. However, this led to frequent navigational errors because the coordinates were misinterpreted. While this representation contained complete information about the environment, it required the model to repeatedly perform coordinate transformations before selecting an action.
 On the second turn of log `coordinate_observation_failure.log`, the LLM reasoned "The weapon is located directly above the agent at position (1, 5)." despite the weapon actually being located **below** the agent's position. This type of navigation error was frequent and stemmed from the LLM's struggle to interpret the coordinates.
 
 **Iteration 2 - Coordinates + Direction + Distance**
+
 I then provided the directions and Manhattan distances of the objects, along with their coordinates. This reduced the amount of spatial reasoning required because the model no longer had to calculate relative positions itself. Navigation quality improved, but coordinate-related errors still occurred. During testing, I observed that the model often relied on the coordinate fields even when the direction fields already contained the information required to make a correct move. This suggested that the coordinate data was introducing unnecessary complexity rather than providing useful information.
 It is worth noting that after I increased the timeout threshold to 100 turns, there was one test run in which the agent succeeded on this iteration (see the log `distance_direction_iteration_win.log`). This proved that moving away from the coordinates was the right approach. However, it took the agent 85 turns, far more than in improved iterations, due to inconsistent targeting and confusion about the current objective.
 
 **Iteration 3 - Direction + Distance + Explicit Objective**
+
 I then removed coordinates entirely and introduced an explicit current objective. Instead of forcing the model to determine which task to prioritise, the observation indicated whether the agent should acquire the weapon, hunt mobs, or move towards the goal. This significantly improved consistency. Navigation decisions were now based on simple directional information rather than coordinate calculations, and the model no longer needed to reason about task prioritisation itself.
 
 **Iteration 4 - Objective-Oriented Observation (Final)**
+
 The final iteration further reduced the observation to only information relevant to the current objective. When the objective was GET_WEAPON, the observation only contained information about the weapon. When hunting mobs, only information about the closest mob was provided. Exposing all mobs often led to inconsistent targeting behaviour, as the model repeatedly switched between targets. Restricting observations to the closest mob reduced this behaviour and simplified decision-making (see log `goal_oriented_all_mobs_almost_failure.log`). When all mobs were defeated, only the goal information was exposed. This reduced the amount of irrelevant information presented to the model, resulting in the highest task completion rate during testing. Rather than reasoning about every entity in the environment simultaneously, the model only needed to reason about the next step required to complete its current objective.
 
 ## Limitations
