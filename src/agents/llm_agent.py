@@ -58,6 +58,7 @@ class LLMAgent(Agent):
             self.stats.end_state,
             self.client.total_input_tokens,
             self.client.total_output_tokens,
+            self.stats.total_invalids,
         )
 
 

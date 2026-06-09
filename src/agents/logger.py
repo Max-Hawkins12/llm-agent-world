@@ -69,14 +69,13 @@ REASONING
         end_state: EndState,
         total_input_tokens: int,
         total_output_tokens: int,
-        # total_invalid_responses: int,
-        # total_invalid_moves: int,
+        total_invalid_responses: int,
     ) -> None:
-        # TOTAL INVALID RESPONSES: {total_invalid_responses} TOTAL INVALID MOVES: {total_invalid_moves}
         end_log = f"""
 ========================================
 TOTAL TURNS: {total_turns}
 END STATE: {end_state.value}
+TOTAL INVALID RESPONSES: {total_invalid_responses}
 TOTAL INPUT TOKENS: {total_input_tokens}
 TOTAL OUTPUT TOKENS: {total_output_tokens}
 ========================================
