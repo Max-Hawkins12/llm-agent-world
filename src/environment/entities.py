@@ -1,4 +1,4 @@
-import random
+from enum import Enum
 from typing import List, Optional, Tuple
 
 from src.game_options import MobMovePattern
@@ -6,30 +6,48 @@ from src.environment.utils import is_within_bounds, neighbors
 from src.ui.colours import UIColour
 
 
-class GameEntity:
+class Entity:
     def __init__(
         self,
         x: int,
         y: int,
         colour: UIColour,
         outline_colour: Optional[UIColour],
-        label: str,
     ):
         self.x = x
         self.y = y
         self.colour = colour
         self.outline_colour = outline_colour
-        self.label = label
         self.alive = True
 
     def position(self) -> Tuple[int, int]:
         return self.x, self.y
 
-    def move_to(self, x: int, y: int) -> None:
-        self.x = x
-        self.y = y
+
+class Direction(Enum):
+    UP = (0, -1)
+    DOWN = (0, 1)
+    LEFT = (-1, 0)
+    Right = (1, 0)
 
 
+class MoveableEntity(Entity):
+    def __init__(self, x, y, colour, outline_colour):
+        super().__init__(x, y, colour, outline_colour)
+
+    def move_in_direction(self, dir: Direction):
+        x, y = dir.value
+
+        self.x += x
+        self.y += y
+
+
+class Player(MoveableEntity):
+    def __init__(self, x, y, colour, outline_colour):
+        super().__init__(x, y, colour, outline_colour)
+
+
+"""
 class Weapon(GameEntity):
     def __init__(self, x: int, y: int):
         super().__init__(x, y, UIColour.WEAPON_YELLOW, None, "Weapon")
@@ -77,3 +95,4 @@ class Mob(GameEntity):
             if is_within_bounds(pos[0], pos[1], grid_width, grid_height)
         ]
         return random.choice(free_positions) if free_positions else (self.x, self.y)
+"""
