@@ -2,7 +2,7 @@ import random
 from collections import deque
 
 from src.environment.utils import Position
-
+from src.environment.entities import Goal
 from .grid import Grid
 
 
@@ -17,24 +17,26 @@ class Maze(Grid):
         self,
         width: int,
         height: int,
-        start_pos: Position = Position(0, 0),
+        player_start_pos: Position = Position(0, 0),
         seed: int | None = None,
     ):
-        super().__init__(width, height, start_pos=start_pos, fill_with_walls=True)
+        super().__init__(
+            width,
+            height,
+            player_start_pos=player_start_pos,
+            fill_with_walls=True,
+        )
 
         self._random = random.Random(seed)
-        self._generate_maze()
+        self._generate_maze(player_start_pos)
 
-    def _generate_maze(self) -> None:
-        self._make_passage(self.start_pos)
+    def _generate_maze(self, start_pos: Position) -> None:
+        self._make_passage(start_pos)
+        self._place_goal_furthest_from_start(start_pos)
 
-        self.goal_pos = self._place_goal_furthest_from_start()
-
-    def _make_passage(self, position: Position) -> None:
-        self._make_cell_a_tile(position)
-        directions = self._random.sample(
-            self.neighbors(position), len(self.neighbors(position))
-        )
+    def _make_passage(self, pos: Position) -> None:
+        self._make_cell_a_tile(pos)
+        directions = self._random.sample(self.neighbors(pos), len(self.neighbors(pos)))
 
         for neighbor in directions:
             if not self.is_wall(neighbor) or self._count_open_neighbors(neighbor) > 1:
@@ -42,10 +44,10 @@ class Maze(Grid):
 
             self._make_passage(neighbor)
 
-    def _place_goal_furthest_from_start(self) -> Position:
-        queue = deque([self.start_pos])
-        distances = {self.start_pos: 0}
-        furthest: Position = self.start_pos
+    def _place_goal_furthest_from_start(self, start_pos: Position) -> None:
+        queue = deque([start_pos])
+        distances = {start_pos: 0}
+        furthest: Position = start_pos
 
         while queue:
             current = queue.popleft()
@@ -63,9 +65,7 @@ class Maze(Grid):
                 distances[neighbor] = current_distance + 1
                 queue.append(neighbor)
 
-        return furthest
+        self._place_goal(furthest, is_locked=False)
 
-    def _count_open_neighbors(self, position: Position) -> int:
-        return sum(
-            1 for neighbor in self.neighbors(position) if not self.is_wall(neighbor)
-        )
+    def _count_open_neighbors(self, pos: Position) -> int:
+        return sum(1 for neighbor in self.neighbors(pos) if not self.is_wall(neighbor))

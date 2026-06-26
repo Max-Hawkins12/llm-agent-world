@@ -1,6 +1,6 @@
 from typing import Optional
 
-from src.environment.entities import BackgroundEntity, Tile, Wall
+from src.environment.entities import Entity, BackgroundEntity, Tile, Wall, Goal
 from src.environment.utils import Position, Direction
 
 
@@ -11,8 +11,7 @@ class Grid:
         self,
         width: int,
         height: int,
-        start_pos: Position = Position(0, 0),
-        goal_pos: Optional[Position] = None,
+        player_start_pos: Position = Position(0, 0),
         fill_with_walls: bool = False,
     ):
         if width < 1 or height < 1:
@@ -20,8 +19,7 @@ class Grid:
 
         self.grid_width = width
         self.grid_height = height
-        self.start_pos = start_pos
-        self.goal_pos = goal_pos
+
         self.grid: list[list[BackgroundEntity]] = [
             [
                 self._create_cell(Position(x, y), fill_with_walls)
@@ -30,15 +28,28 @@ class Grid:
             for y in range(self.grid_height)
         ]
 
-    def _create_cell(self, position: Position, is_wall: bool) -> BackgroundEntity:
+        self.player_pos = player_start_pos
+        self.entities: list[Entity] = []
+
+    @property  # TODO Add type checking
+    def goal(self) -> Goal:
+        return self.grid[self.goal_pos.y][self.goal_pos.x] if self.goal_pos else None  # type: ignore[return-value]
+
+    # Methods used in grid creation
+
+    def _create_cell(self, pos: Position, is_wall: bool) -> BackgroundEntity:
         entity_class = Wall if is_wall else Tile
-        return entity_class(position)
+        return entity_class(pos)
 
-    def _make_cell_a_tile(self, position: Position) -> None:
-        self.grid[position.y][position.x] = Tile(position)
+    def _make_cell_a_tile(self, pos: Position) -> None:
+        self.grid[pos.y][pos.x] = Tile(pos)
 
-    def _make_cell_a_wall(self, position: Position) -> None:
-        self.grid[position.y][position.x] = Wall(position)
+    def _make_cell_a_wall(self, pos: Position) -> None:
+        self.grid[pos.y][pos.x] = Wall(pos)
+
+    def _place_goal(self, pos: Position, is_locked: bool) -> None:
+        self.goal_pos: Position = pos
+        self.grid[pos.y][pos.x] = Goal(pos, is_locked)
 
     def _all_positions(self) -> list[Position]:
         return [
@@ -47,43 +58,29 @@ class Grid:
             for x in range(self.grid_width)
         ]
 
-    def neighbors(self, position: Position) -> list[Position]:
+    def neighbors(self, pos: Position) -> list[Position]:
         return [
             neighbor
             for direction in Direction
-            if self.is_within_bounds(neighbor := position.moved_by(direction.value))
+            if self.is_within_bounds(neighbor := pos.moved_by(direction.value))
         ]
 
-    def is_within_bounds(self, position: Position) -> bool:
-        return 0 <= position.x < self.grid_width and 0 <= position.y < self.grid_height
+    # Public methods to be used during game
 
-    def is_wall(self, position: Position) -> bool:
-        return isinstance(self.grid[position.y][position.x], Wall)
+    def is_within_bounds(self, pos: Position) -> bool:
+        return 0 <= pos.x < self.grid_width and 0 <= pos.y < self.grid_height
 
-    def is_passable(self, position: Position) -> bool:
-        return self.grid[position.y][position.x].is_passable
+    def is_wall(self, pos: Position) -> bool:
+        return isinstance(self.grid[pos.y][pos.x], Wall)
+
+    def is_passable(self, pos: Position) -> bool:
+        return self.grid[pos.y][pos.x].is_passable
+
+    def next_game_step(self):
+        pass
 
     def get_tile_positions(self) -> list[Position]:
-        return [
-            position for position in self._all_positions() if not self.is_wall(position)
-        ]
+        return [pos for pos in self._all_positions() if not self.is_wall(pos)]
 
     def get_wall_positions(self) -> list[Position]:
-        return [
-            position for position in self._all_positions() if self.is_wall(position)
-        ]
-
-    def render_to_text(self) -> str:
-        rows = []
-        for y in range(self.grid_height):
-            row = []
-            for x in range(self.grid_width):
-                position = Position(x, y)
-                if position == self.start_pos:
-                    row.append("S")
-                elif position == self.goal_pos:
-                    row.append("G")
-                else:
-                    row.append(self.grid[y][x].render_char)
-            rows.append("".join(row))
-        return "\n".join(rows)
+        return [pos for pos in self._all_positions() if self.is_wall(pos)]

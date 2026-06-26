@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass
 
-from src.environment.entities import Door, GoalEntity, Key, PlayerEntity
+from src.environment.entities import Door, Key
 from src.environment.utils import Position
 
 from .grid import Grid
@@ -33,25 +33,27 @@ class LockedDoors(Grid):
         seed: int | None = None,
         section_count: int | None = None,
     ):
+
+        self._validate_grid_size(width, height)
+
+        self.section_count = section_count or self._random.randint(
+            2, max(2, min(5, (width + 1) // 3))
+        )
+        self._validate_section_count(width)
+
+        super().__init__(width, height)
+
+        self.sections: list[Section] = []
+        self.doors: list[Door] = []
+
+        self._random = random.Random(seed)
+        self._generate_grid()
+
+    def _validate_grid_size(self, width: int, height: int) -> None:
         if height < 3:
             raise ValueError("LockedDoors height must be at least 3")
         if width < 5:
             raise ValueError("LockedDoors width must be at least 5")
-
-        self._random = random.Random(seed)
-        self.section_count = section_count or self._random.randint(
-            2, max(2, min(5, (width + 1) // 3))
-        )
-        self.sections: list[Section] = []
-        self.doors: list[Door] = []
-        self.keys: list[Key] = []
-        self.player: PlayerEntity | None = None
-        self.goal_entity: GoalEntity | None = None
-
-        self._validate_section_count(width)
-        super().__init__(width, height)
-
-        self._generate_grid()
 
     def _validate_section_count(self, width: int) -> None:
         max_sections = (width + 1) // 3
@@ -66,11 +68,11 @@ class LockedDoors(Grid):
         self.sections = self._create_sections()
         self._add_section_dividers()
 
-        self.start = self._random_position_in_section(self.sections[0], avoid=[])
-        self.goal = self._random_position_in_section(self.sections[-1], avoid=[])
-        self.player = PlayerEntity(self.start)
-        self.goal_entity = GoalEntity(self.goal)
-
+        self.player_pos = self._random_position_in_section(self.sections[0], avoid=[])
+        self._place_goal(
+            pos=self._random_position_in_section(self.sections[-1], avoid=[]),
+            is_locked=False,
+        )
         self._place_keys()
 
     def _create_sections(self) -> list[Section]:
@@ -99,22 +101,22 @@ class LockedDoors(Grid):
             door_y = self._random.randrange(self.grid_height)
 
             for y in range(self.grid_height):
-                position = Position(divider_x, y)
+                pos = Position(divider_x, y)
                 if y == door_y:
-                    door = Door(position, door_id)
-                    self.grid[position.y][position.x] = door
+                    door = Door(pos, door_id)
+                    self.grid[pos.y][pos.x] = door
                     self.doors.append(door)
                 else:
-                    self._make_cell_a_wall(position)
+                    self._make_cell_a_wall(pos)
 
     def _place_keys(self) -> None:
-        occupied = [self.start, self.goal]
+        occupied = [self.player_pos, self.goal_pos]
         for section, door in zip(self.sections, self.doors):
-            key_position = self._random_position_in_section(section, occupied)
-            key = Key(key_position, key_id=door.key_id)
-            self.grid[key.position.y][key.position.x] = key
-            self.keys.append(key)
-            occupied.append(key_position)
+            key_pos = self._random_position_in_section(section, occupied)
+
+            self.entities.append(Key(pos=key_pos, key_id=door.key_id))
+
+            occupied.append(key_pos)
 
     def _random_position_in_section(
         self, section: Section, avoid: list[Position]
@@ -127,9 +129,10 @@ class LockedDoors(Grid):
         ]
         return self._random.choice(candidates)
 
-    def unlock_door(self, key: Key) -> Door | None:
+    # TODO This is not how doors will be unlocked
+    """def unlock_door(self, key: Key) -> Door | None:
         for door in self.doors:
             if door.key_id == key.key_id:
                 door.unlock()
                 return door
-        return None
+        return None"""

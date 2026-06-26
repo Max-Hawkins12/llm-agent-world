@@ -1,19 +1,23 @@
-from .entities.actors import PlayerEntity
-from .grids.grid import Grid
+from .entities import Player
+from .grids import Grid
+
+from src.actions import GameAction
 
 
 class Game:
     def __init__(self, grid: Grid):
         self.grid = grid
 
-        x, y = self.grid.start
+        self.player = Player(self.grid.player_pos)
+        self.entities = self.grid.entities
 
-        self.agent = Agent(x, y)
-
-    def process_action(self, action: AgentAction):
+    def process_action(self, action: GameAction):
         """
-        if movement action -> ask grid if new cell is valid then move
-        elif -> ask grid if action is valid child classes will override a do_action(pos, action) in Grid
+        if action == Movement action
+            try_move_in_direction
+        if action == other
+            try_do_action
 
-        Then call a grid.perform moves method -> will move mobs or anything the specific grid may do
+        other_entities.action
+
         """
