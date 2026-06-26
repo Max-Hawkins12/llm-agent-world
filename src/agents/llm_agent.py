@@ -8,7 +8,7 @@ from src.agents.agent import Agent, AgentResponse
 from src.agents.logger import RunLogger
 from src.agents.observation_factory import build_game_observation
 from src.agents.prompt_factory import build_prompt, parse_response
-from src.environment.game import Game
+from src.environment.game_old import Game
 from src.game_flow.enums import EndState
 from src.actions import GameAction
 

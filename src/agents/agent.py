@@ -2,7 +2,7 @@ from pygame.event import Event
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from src.environment.game import Game
+from src.environment.game_old import Game
 from src.game_flow.enums import EndState
 from src.actions import GameAction
 

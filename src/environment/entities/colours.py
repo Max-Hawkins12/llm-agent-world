@@ -11,7 +11,4 @@ class EntityColours(Enum):
 
     WEAPON_YELLOW = (255, 255, 0)
     GOAL_GREEN = (0, 255, 0)
-
-
-# Backwards-compatible alias for the original misspelling.
-EnitityColours = EntityColours
+    WHITE = (255, 255, 255)

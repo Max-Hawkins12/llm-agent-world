@@ -1,40 +1,7 @@
 from .colours import EnitityColours, EntityColours
-from .entity import (
-    BackgroundEntity,
-    DefeatableMixin,
-    Direction,
-    Entity,
-    Goal,
-    GoalEntity,
-    InteractableMixin,
-    MazeGoal,
-    MazePlayer,
-    MazeTile,
-    MazeWall,
-    MovableEntity,
-    Player,
-    PlayerEntity,
-    Tile,
-    Wall,
-)
+from .actors import Agent, Mob, MovableEntity, Player, PlayerEntity
+from .background import BackgroundEntity, Tile, Wall
+from .entity import DefeatableMixin, Direction, Entity, InteractableMixin
+from .interactables import Door, Goal, GoalEntity, Key, Weapon
 
-__all__ = [
-    "BackgroundEntity",
-    "DefeatableMixin",
-    "Direction",
-    "EnitityColours",
-    "Entity",
-    "EntityColours",
-    "Goal",
-    "GoalEntity",
-    "InteractableMixin",
-    "MazeGoal",
-    "MazePlayer",
-    "MazeTile",
-    "MazeWall",
-    "MovableEntity",
-    "Player",
-    "PlayerEntity",
-    "Tile",
-    "Wall",
-]
+GameEntity = Entity

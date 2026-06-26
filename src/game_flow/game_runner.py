@@ -3,7 +3,7 @@ import pygame
 from src.agents.agent import Agent, AgentResponse
 from src.game_flow.enums import GameState
 from src.game_flow.agent_factory import AgentBuilder
-from src.environment.game import Game
+from src.environment.game_old import Game
 from src.ui.menu import StartMenu
 from src.ui.renderer import Renderer
 from src.actions import GameAction, MenuAction

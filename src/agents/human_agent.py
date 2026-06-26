@@ -1,7 +1,7 @@
 from pygame.event import Event
 
 from src.agents.agent import Agent, AgentResponse
-from src.environment.game import Game
+from src.environment.game_old import Game
 from src.actions import GameAction
 from src.input_mapper import get_game_action
 

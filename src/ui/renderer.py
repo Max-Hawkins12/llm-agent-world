@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pygame
 
 from src.environment.entities import Agent, Goal, Mob, GameEntity
-from src.environment.game import Game
+from src.environment.game_old import Game
 from src.ui.colours import UIColour
 from src.ui.menu import StartMenu
 
@@ -169,8 +169,8 @@ class Renderer:
         layout: GridLayout,
     ) -> None:
 
-        cell_x = layout.offset_x + entity.x * self.cell_size
-        cell_y = layout.offset_y + entity.y * self.cell_size
+        cell_x = layout.offset_x + entity.position.x * self.cell_size
+        cell_y = layout.offset_y + entity.position.y * self.cell_size
 
         outline = self._should_outline(entity)
 

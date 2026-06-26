@@ -1,16 +1,19 @@
-from typing import List, Tuple
+from __future__ import annotations
+
+from enum import Enum
+from typing import NamedTuple
 
 
-def is_within_bounds(x: int, y: int, grid_width: int, grid_height: int) -> bool:
-    return 0 <= x < grid_width and 0 <= y < grid_height
+class Position(NamedTuple):
+    x: int
+    y: int
+
+    def moved_by(self, offset: Position) -> Position:
+        return Position(self.x + offset.x, self.y + offset.y)
 
 
-def neighbors(
-    x: int, y: int, grid_width: int, grid_height: int
-) -> List[Tuple[int, int]]:
-    options = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
-    return [
-        (cx, cy)
-        for cx, cy in options
-        if is_within_bounds(cx, cy, grid_width, grid_height)
-    ]
+class Direction(Enum):
+    UP = Position(-1, 0)
+    RIGHT = Position(0, 1)
+    DOWN = Position(1, 0)
+    LEFT = Position(0, -1)
