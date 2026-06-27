@@ -11,6 +11,11 @@ GAME_KEYMAP = {
     pygame.K_LEFT: GameAction.MOVE_LEFT,
     pygame.K_d: GameAction.MOVE_RIGHT,
     pygame.K_RIGHT: GameAction.MOVE_RIGHT,
+    pygame.K_e: GameAction.PICK_UP,
+    pygame.K_i: GameAction.USE_UP,
+    pygame.K_k: GameAction.USE_DOWN,
+    pygame.K_j: GameAction.USE_LEFT,
+    pygame.K_l: GameAction.USE_RIGHT,
     pygame.K_ESCAPE: GameAction.QUIT,
 }
 

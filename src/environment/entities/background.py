@@ -1,16 +1,12 @@
 from src.environment.utils import Position
 
-from .entity import Entity, LockableMixin
+from .entity import Entity
 
 
 class BackgroundEntity(Entity):
     """Static terrain that occupies a grid cell."""
 
     blocks_movement = False
-
-    @property
-    def is_passable(self) -> bool:
-        return not self.blocks_movement
 
 
 class Tile(BackgroundEntity):
@@ -31,17 +27,30 @@ class Wall(BackgroundEntity):
         super().__init__(pos, name="Wall")
 
 
-class Goal(LockableMixin, BackgroundEntity):
+class LockableBackgroundEntity(BackgroundEntity):
+    """Background terrain that can toggle whether it blocks movement."""
 
+    def __init__(self, pos: Position, name: str, is_locked: bool = False):
+        super().__init__(pos=pos, name=name)
+        self.is_locked = is_locked
+        self.blocks_movement = is_locked
+
+    def lock(self) -> None:
+        self.is_locked = True
+        self.blocks_movement = True
+
+    def unlock(self) -> None:
+        self.is_locked = False
+        self.blocks_movement = False
+
+
+class Goal(LockableBackgroundEntity):
     def __init__(self, pos: Position, is_locked: bool = False):
         super().__init__(pos=pos, name="Goal", is_locked=is_locked)
-        self.blocks_movement = is_locked
 
 
-class Door(LockableMixin, BackgroundEntity):
+class Door(LockableBackgroundEntity):
     """A door that blocks movement until unlocked."""
 
-    def __init__(self, pos: Position, key_id: int, is_locked: bool = True):
-        super().__init__(pos=pos, name=f"Door_{key_id}", is_locked=is_locked)
-        self.key_id = key_id
-        self.blocks_movement = is_locked
+    def __init__(self, pos: Position, name: str, is_locked: bool = True):
+        super().__init__(pos=pos, name=f"Door_{name}", is_locked=is_locked)

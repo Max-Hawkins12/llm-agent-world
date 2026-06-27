@@ -35,6 +35,7 @@ class LockedDoors(Grid):
     ):
 
         self._validate_grid_size(width, height)
+        self._random = random.Random(seed)
 
         self.section_count = section_count or self._random.randint(
             2, max(2, min(5, (width + 1) // 3))
@@ -46,7 +47,6 @@ class LockedDoors(Grid):
         self.sections: list[Section] = []
         self.doors: list[Door] = []
 
-        self._random = random.Random(seed)
         self._generate_grid()
 
     def _validate_grid_size(self, width: int, height: int) -> None:
@@ -103,18 +103,24 @@ class LockedDoors(Grid):
             for y in range(self.grid_height):
                 pos = Position(divider_x, y)
                 if y == door_y:
-                    door = Door(pos, door_id)
-                    self.grid[pos.y][pos.x] = door
+                    door = Door(pos, name=str(door_id))
+                    self._set_background_entity(door)
                     self.doors.append(door)
                 else:
-                    self._make_cell_a_wall(pos)
+                    self._place_wall(pos)
 
     def _place_keys(self) -> None:
         occupied = [self.player_pos, self.goal_pos]
         for section, door in zip(self.sections, self.doors):
             key_pos = self._random_position_in_section(section, occupied)
 
-            self.entities.append(Key(pos=key_pos, key_id=door.key_id))
+            self._add_static_entity(
+                Key(
+                    pos=key_pos,
+                    name=str(door.key_id),
+                    unlocks=door,
+                )
+            )
 
             occupied.append(key_pos)
 
@@ -128,11 +134,3 @@ class LockedDoors(Grid):
             if Position(x, y) not in avoid
         ]
         return self._random.choice(candidates)
-
-    # TODO This is not how doors will be unlocked
-    """def unlock_door(self, key: Key) -> Door | None:
-        for door in self.doors:
-            if door.key_id == key.key_id:
-                door.unlock()
-                return door
-        return None"""

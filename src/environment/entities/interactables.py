@@ -1,20 +1,38 @@
+from typing import TYPE_CHECKING, Optional
+
 from src.environment.utils import Position
 
-from .entity import Entity, InteractableMixin
+from .background import LockableBackgroundEntity
+from .entity import Actor, Entity, StaticEntity
+
+if TYPE_CHECKING:
+    from src.environment.grids import Grid
 
 
-class Key(InteractableMixin, Entity):
+class Key(StaticEntity):
     """A key that opens the door with the same key id."""
 
-    def __init__(self, pos: Position, key_id: int):
-        super().__init__(pos, name=f"Key_{key_id}")
-        self.key_id = key_id
+    def __init__(
+        self,
+        pos: Position,
+        name: str = "",
+        unlocks: Optional[LockableBackgroundEntity] = None,
+    ):
+        super().__init__(pos, name=f"Key_{name}")
+        self.unlocks = unlocks
 
-    @property
-    def is_passable(self) -> bool:
-        return True
+    def use_on(self, target: LockableBackgroundEntity) -> bool:
+        if not target == self.unlocks:
+            return False
+        else:
+            target.unlock()
+            self.spend_use()
+            return True
 
 
-class Weapon(Entity):
+class Weapon(StaticEntity):
     def __init__(self, pos: Position):
         super().__init__(pos, name="Weapon")
+
+    def use_on(self, target: Entity) -> bool:
+        return False

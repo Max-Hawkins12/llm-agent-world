@@ -2,7 +2,6 @@ import random
 from collections import deque
 
 from src.environment.utils import Position
-from src.environment.entities import Goal
 from .grid import Grid
 
 
@@ -35,7 +34,7 @@ class Maze(Grid):
         self._place_goal_furthest_from_start(start_pos)
 
     def _make_passage(self, pos: Position) -> None:
-        self._make_cell_a_tile(pos)
+        self._place_tile(pos)
         directions = self._random.sample(self.neighbors(pos), len(self.neighbors(pos)))
 
         for neighbor in directions:

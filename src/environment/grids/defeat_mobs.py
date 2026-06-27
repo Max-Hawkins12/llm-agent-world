@@ -4,7 +4,7 @@ from typing import List
 from src.environment.entities import Mob
 from src.environment.utils import Position
 
-from .grid import Grid
+from . import Grid
 
 
 class DefeatMobs(Grid):
@@ -47,12 +47,12 @@ class DefeatMobs(Grid):
         for mob_id in range(1, mob_count + 1):
             position = self._random_position(avoid=occupied)
             mob = Mob(position, mob_id)
-            self.entities.append(mob)
+            self._add_actor(mob)
             self.mobs.append(mob)
             occupied.append(position)
 
     def _random_position(self, avoid: List[Position]) -> Position:
-        candidates = [pos for pos in self.get_tile_positions() if pos not in avoid]
+        candidates = [pos for pos in self._get_passable_positions() if pos not in avoid]
         if not candidates:
             raise ValueError("No available positions for DefeatMobs placement")
 
@@ -70,3 +70,6 @@ class DefeatMobs(Grid):
     def update_goal_lock(self) -> None:
         if self.total_alive_mobs() == 0:
             self.goal.unlock()
+
+    def update(self) -> None:
+        self.update_goal_lock()
