@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any
 
 from src.actions import MenuAction
-from src.game_flow.experiment import ExperimentConfig
+from src.app.experiment import ExperimentConfig
 from src.game_options import AgentType, GameOptions, GridType
 
 

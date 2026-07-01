@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pygame
 
-from src.game_flow.experiment import ExperimentResult, RunResult
+from src.app.experiment import ExperimentResult, RunResult
 from src.ui.colours import UIColour
 from src.ui.context import RenderContext
 
