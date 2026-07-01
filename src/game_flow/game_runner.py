@@ -1,18 +1,24 @@
+from __future__ import annotations
+
 import pygame
 
+from src.actions import GameAction, MenuAction
 from src.agents.agent import Agent, AgentResponse
-from src.game_flow.enums import GameState
+from src.environment.game import Game
 from src.game_flow.agent_factory import AgentBuilder
-from src.environment.game_old import Game
+from src.game_flow.enums import EndState, GameState
+from src.game_flow.experiment import (
+    ExperimentConfig,
+    ExperimentResult,
+    RunResult,
+    TurnRecord,
+    load_historical_results,
+)
+from src.input_mapper import get_menu_action
 from src.ui.menu import StartMenu
 from src.ui.renderer import Renderer
-from src.actions import GameAction, MenuAction
-from src.input_mapper import get_menu_action
 
 FPS = 60
-WINDOW_WIDTH = 640
-WINDOW_HEIGHT = 640
-CELL_SIZE = 64
 
 
 class GameRunner:
@@ -20,24 +26,31 @@ class GameRunner:
         pygame.init()
         pygame.key.set_repeat(0)
 
-        max_game_height = max(WINDOW_HEIGHT, 10 * CELL_SIZE + 80)
-
-        self.renderer = Renderer(WINDOW_WIDTH, max_game_height, 10, 10, CELL_SIZE)
+        self.renderer = Renderer()
         self.menu = StartMenu()
+
+        self.state: GameState = GameState.START_MENU
+        self.config: ExperimentConfig | None = None
+        self.result: ExperimentResult | None = None
+        self.historical_results = load_historical_results()
+
         self.game: Game | None = None
         self.agent: Agent | None = None
+        self.current_run_index = 0
+        self.current_run_turns: list[TurnRecord] = []
+        self.all_turns: list[TurnRecord] = []
+        self.results_scroll = 0
 
-        self.state: GameState = GameState.MENU
-
-    def run(self):
+    def run(self) -> None:
         while self.state != GameState.QUIT:
-
-            if self.state == GameState.MENU:
+            if self.state == GameState.START_MENU:
                 self.update_menu()
             elif self.state == GameState.RUNNING:
                 self.update_game()
             elif self.state == GameState.END_SCREEN:
                 self.update_end_screen()
+            elif self.state == GameState.RESULTS:
+                self.update_results()
 
             self.renderer.present(FPS)
 
@@ -48,14 +61,21 @@ class GameRunner:
         if self.state == GameState.QUIT:
             return
 
-        action = get_menu_action(events)
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                action_id = self.renderer.hit_test(event.pos)
+                if action_id == "start":
+                    self.start_experiment()
+                elif action_id == "quit":
+                    self.state = GameState.QUIT
+                elif action_id:
+                    self.menu.process_click(action_id)
 
+        action = get_menu_action(events)
         if action == MenuAction.QUIT:
             self.state = GameState.QUIT
-            return
         elif action == MenuAction.START:
-            self.start_game()
-            self.state = GameState.RUNNING
+            self.start_experiment()
         else:
             self.menu.process_action(action)
 
@@ -66,52 +86,161 @@ class GameRunner:
         if self.state == GameState.QUIT:
             return
 
-        agent_response: AgentResponse = self.agent.get_action(
-            events=events,
-            game=self.game,
-        )
+        assert self.game is not None
+        assert self.agent is not None
+        assert self.config is not None
 
-        if agent_response.action.value != GameAction.WAIT.value:
-            print("-------------------")
-            print(agent_response)
+        response: AgentResponse = self.agent.get_action(events=events, game=self.game)
 
-        if agent_response.action == GameAction.QUIT:
+        if response.action == GameAction.QUIT:
             self.state = GameState.QUIT
             return
-        elif agent_response.failure:
-            self.state = GameState.END_SCREEN
-            self.agent.game_ended_clean_up()
-        else:
-            self.game.process_action(agent_response.action)
 
-        if self.game.has_finished():
-            self.state = GameState.END_SCREEN
-            self.agent.game_ended_clean_up()
+        if response.action != GameAction.WAIT:
+            if response.failure is None:
+                self.game.process_action(response.action)
+            else:
+                self.game.action_outcome.action_name = response.action.value
+                self.game.action_outcome.outcome = response.failure.value
 
-        self.renderer.render_game(self.game)
+            self.record_turn(response)
+
+        if response.failure:
+            self.finish_run(response.failure)
+        elif self.game.has_finished():
+            self.finish_run(EndState.WIN)
+
+        if self.state == GameState.RUNNING and self.game is not None:
+            self.renderer.render_game(
+                self.game,
+                self.all_turns,
+                self.current_run_index,
+                self.config.run_count,
+            )
 
     def update_end_screen(self) -> None:
-
         events = self.poll_events()
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.state = GameState.QUIT
+                elif event.key == pygame.K_r:
+                    self.reset_to_menu()
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    self.state = GameState.RESULTS
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                action_id = self.renderer.hit_test(event.pos)
+                if action_id == "restart":
+                    self.reset_to_menu()
+                elif action_id == "results":
+                    self.historical_results = load_historical_results()
+                    self.state = GameState.RESULTS
+                elif action_id == "quit":
+                    self.state = GameState.QUIT
 
+        self.renderer.render_end_screen(self.result)
+
+    def update_results(self) -> None:
+        events = self.poll_events()
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                self.state = GameState.QUIT
+                self.state = GameState.END_SCREEN
+            elif event.type == pygame.MOUSEWHEEL:
+                self.results_scroll = max(0, self.results_scroll - event.y * 28)
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                action_id = self.renderer.hit_test(event.pos)
+                if action_id == "back_to_end":
+                    self.state = GameState.END_SCREEN
+                elif action_id == "restart":
+                    self.reset_to_menu()
 
-        self.renderer.render_end_screen(self.game)
+        self.renderer.render_results(
+            self.result,
+            self.historical_results,
+            self.results_scroll,
+        )
 
-    def start_game(self) -> None:
-        self.game = Game(self.menu.build_game_settings())
+    def start_experiment(self) -> None:
+        config = self.menu.build_config()
+        if not config.is_supported():
+            return
 
-        builder = AgentBuilder(self.menu.agent_type)
-        self.agent = builder.build_agent()
+        self.config = config
+        self.result = ExperimentResult(config=config)
+        self.current_run_index = 0
+        self.current_run_turns = []
+        self.all_turns = []
+        self.start_next_run()
 
-        self.renderer.set_grid_size(self.game.grid_width, self.game.grid_height)
+    def start_next_run(self) -> None:
+        assert self.config is not None
+
+        self.current_run_index += 1
+        self.game = self.config.build_game(self.current_run_index)
+        self.agent = AgentBuilder(self.config.agent_type).build_agent()
+        self.current_run_turns = []
+        self.state = GameState.RUNNING
+
+    def record_turn(self, response: AgentResponse) -> None:
+        assert self.game is not None
+        assert self.agent is not None
+
+        input_tokens, output_tokens = self.agent.token_totals()
+        turn_number = len(self.current_run_turns) + 1
+        record = TurnRecord(
+            run_index=self.current_run_index,
+            turn_number=turn_number,
+            action=response.action,
+            reasoning=response.reasoning,
+            outcome=self.game.action_outcome.outcome,
+            failure=response.failure,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+        self.current_run_turns.append(record)
+        self.all_turns.append(record)
+
+    def finish_run(self, end_state: EndState) -> None:
+        assert self.config is not None
+        assert self.result is not None
+        assert self.agent is not None
+
+        self.agent.game_ended_clean_up()
+        input_tokens, output_tokens = self.agent.token_totals()
+        invalid_inputs = self.agent.invalid_count()
+        if invalid_inputs == 0:
+            invalid_inputs = sum(1 for turn in self.current_run_turns if turn.is_invalid)
+
+        run_result = RunResult(
+            run_index=self.current_run_index,
+            end_state=end_state,
+            turns=len(self.current_run_turns),
+            invalid_inputs=invalid_inputs,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            log_path=self.agent.log_path(),
+            turns_detail=list(self.current_run_turns),
+        )
+        self.result.add_run(run_result)
+
+        if self.current_run_index < self.config.run_count:
+            self.start_next_run()
+        else:
+            self.historical_results = load_historical_results()
+            self.state = GameState.END_SCREEN
+
+    def reset_to_menu(self) -> None:
+        self.game = None
+        self.agent = None
+        self.config = None
+        self.current_run_index = 0
+        self.current_run_turns = []
+        self.all_turns = []
+        self.results_scroll = 0
+        self.state = GameState.START_MENU
 
     def poll_events(self) -> list[pygame.event.Event]:
         events = pygame.event.get()
-
         if any(event.type == pygame.QUIT for event in events):
             self.state = GameState.QUIT
-
         return events

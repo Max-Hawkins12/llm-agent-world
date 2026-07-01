@@ -8,7 +8,7 @@ from src.agents.agent import Agent, AgentResponse
 from src.agents.logger import RunLogger
 from src.agents.observation_factory import build_game_observation
 from src.agents.prompt_factory import build_prompt, parse_response
-from src.environment.game_old import Game
+from src.environment.game import Game
 from src.game_flow.enums import EndState
 from src.actions import GameAction
 
@@ -34,7 +34,7 @@ class LLMAgent(Agent):
 
         raw_response = self.client.query(prompt)
 
-        action, resoning = parse_response(raw_response)
+        action, reasoning = parse_response(raw_response)
 
         self.logger.log_turn(
             self.stats.turns,
@@ -42,13 +42,13 @@ class LLMAgent(Agent):
             prompt,
             raw_response,
             action,
-            resoning,
+            reasoning,
         )
 
         outcome = self.stats.check_invalids(action)
 
         if not outcome:
-            outcome = AgentResponse(action, reasoning=resoning)
+            outcome = AgentResponse(action, reasoning=reasoning)
 
         return outcome
 
@@ -60,6 +60,18 @@ class LLMAgent(Agent):
             self.client.total_output_tokens,
             self.stats.total_invalids,
         )
+
+    def token_totals(self) -> tuple[int, int]:
+        return (self.client.total_input_tokens, self.client.total_output_tokens)
+
+    def invalid_count(self) -> int:
+        return self.stats.total_invalids
+
+    def turn_count(self) -> int:
+        return self.stats.turns
+
+    def log_path(self):
+        return self.logger.log_path
 
 
 class AgentStatistics:

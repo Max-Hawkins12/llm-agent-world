@@ -2,9 +2,11 @@ from enum import Enum
 
 
 class GameState(Enum):
-    MENU = "menu"
+    START_MENU = "start_menu"
+    MENU = "start_menu"
     RUNNING = "running"
-    END_SCREEN = "finished"
+    END_SCREEN = "end_screen"
+    RESULTS = "results"
 
     QUIT = "quit"
 

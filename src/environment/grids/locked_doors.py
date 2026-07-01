@@ -117,7 +117,7 @@ class LockedDoors(Grid):
             self._add_static_entity(
                 Key(
                     pos=key_pos,
-                    name=str(door.key_id),
+                    name=door.name.removeprefix("Door_"),
                     unlocks=door,
                 )
             )

@@ -2,7 +2,7 @@ from pygame.event import Event
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from src.environment.game_old import Game
+from src.environment.game import Game
 from src.game_flow.enums import EndState
 from src.actions import GameAction
 
@@ -32,3 +32,15 @@ class Agent(ABC):
     @abstractmethod
     def game_ended_clean_up(self) -> None:
         raise NotImplementedError
+
+    def token_totals(self) -> tuple[int, int]:
+        return (0, 0)
+
+    def invalid_count(self) -> int:
+        return 0
+
+    def turn_count(self) -> int:
+        return 0
+
+    def log_path(self):
+        return None

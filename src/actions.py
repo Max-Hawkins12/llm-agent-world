@@ -41,7 +41,7 @@ class GameAction(Enum):
 
     @property
     def direction(self) -> Optional[Direction]:
-        if not self.is_movement_action or not self.is_use_action:
+        if not (self.is_movement_action or self.is_use_action):
             return None
 
         direction_mapper = {

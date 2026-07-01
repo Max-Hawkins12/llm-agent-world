@@ -11,9 +11,10 @@ def build_prompt(observation: dict, previous_action: dict) -> str:
     return f"""You are an agent in a grid world.
 
 World rules:
-- You can defeat mobs by moving into them when you have the weapon.
-- You cannot move into mobs without the weapon.
-- The goal remains locked until all mobs are defeated.
+- Some grids contain mobs, keys, doors, walls, and goals.
+- Move toward the current objective in the observation.
+- If mobs are present, defeat them by moving into them.
+- The goal may remain locked until all mobs are defeated or doors are opened.
 - Mobs move one cell after every action.
 
 Available actions:

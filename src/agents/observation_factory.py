@@ -1,4 +1,4 @@
-from src.environment.game_old import Game
+from src.environment.game import Game
 from src.environment.utils import Position
 from src.game_options import AgentType
 
@@ -10,40 +10,45 @@ def build_game_observation(
         return None
 
     agent_pos = game.agent.position
-    weapon_pos = game.weapon.position if game.weapon.alive else None
-    goal_pos = game.goal.position
-    mob_pos = [m.position for m in game.mobs if m.alive]
+    goal_pos = game.goal.position if game.goal else None
+    mobs = getattr(game.grid, "mobs", [])
+    mob_pos = [m.position for m in mobs if m.alive]
 
     closest_mob_pos = None
 
     if mob_pos:
         closest_mob_pos = min(mob_pos, key=lambda p: manhattan_distance(agent_pos, p))
 
+    alive_mobs = len(mob_pos)
+    has_weapon = bool(getattr(game.agent, "has_weapon", False))
+    weapon = getattr(game, "weapon", None)
+    weapon_pos = weapon.position if weapon and weapon.alive else None
+
     observation = {
         "current_objective": (
             "GET_WEAPON"
-            if not game.agent.has_weapon
-            else "HUNT_MOBS" if game.total_alive_mobs() > 0 else "REACH_GOAL"
+            if weapon_pos is not None and not has_weapon
+            else "HUNT_MOBS" if alive_mobs > 0 else "REACH_GOAL"
         ),
-        "has_weapon": game.agent.has_weapon,
-        "alive_mobs": game.total_alive_mobs(),
+        "has_weapon": has_weapon,
+        "alive_mobs": alive_mobs,
     }
 
-    if not game.agent.has_weapon:
+    if weapon_pos is not None and not has_weapon:
         observation = add_direction_and_distance(
             dict=observation,
             obj_name="weapon",
             obj_pos=weapon_pos,
             agent_pos=agent_pos,
         )
-    elif game.goal.locked:
+    elif closest_mob_pos is not None:
         observation = add_direction_and_distance(
             dict=observation,
             obj_name="closest_mob",
             obj_pos=closest_mob_pos,
             agent_pos=agent_pos,
         )
-    else:
+    elif goal_pos is not None:
         observation = add_direction_and_distance(
             dict=observation,
             obj_name="goal",

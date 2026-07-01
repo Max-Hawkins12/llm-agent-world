@@ -1,6 +1,21 @@
 from enum import Enum
 
 
+class GridType(Enum):
+    DEFEAT_MOBS = "defeat_mobs"
+    MAZE = "maze"
+    LOCKED_DOORS = "locked_doors"
+
+    @property
+    def display_name(self) -> str:
+        names = {
+            GridType.DEFEAT_MOBS: "Defeat Mobs",
+            GridType.MAZE: "Maze",
+            GridType.LOCKED_DOORS: "Locked Doors",
+        }
+        return names[self]
+
+
 class MobPlacement(Enum):
     FIXED = "fixed"
     RANDOM = "random"
@@ -29,7 +44,11 @@ class GameOptions:
     Stores the options the user can currently change about the game, and their allowed values.
     """
 
+    GRID_TYPE = [e for e in GridType]
     AGENT_TYPE = [e for e in AgentType]
+    GRID_SIZE_OPTIONS = [(8, 8), (10, 10), (12, 12), (16, 12), (20, 20)]
+    RUN_COUNT_OPTIONS = [1, 3, 5, 10]
+    SECTION_COUNT_OPTIONS = [2, 3, 4, 5]
     MOB_PLACEMENT_OPTIONS = [e.value for e in MobPlacement]
     MOB_COUNT_OPTIONS = [i for i in range(1, 5)]
     MOB_MOVE_PATTERNS = [e.value for e in MobMovePattern]
