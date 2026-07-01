@@ -5,9 +5,9 @@ import pygame
 from src.actions import GameAction, MenuAction
 from src.agents.agent import Agent, AgentResponse
 from src.environment.game import Game
-from src.game_flow.agent_factory import AgentBuilder
-from src.game_flow.enums import EndState, GameState
-from src.game_flow.experiment import (
+from src.agents.factory import AgentBuilder
+from src.app.states import EndState, GameState
+from src.app.experiment import (
     ExperimentConfig,
     ExperimentResult,
     RunResult,
@@ -21,7 +21,7 @@ from src.ui.renderer import Renderer
 FPS = 60
 
 
-class GameRunner:
+class AppController:
     def __init__(self):
         pygame.init()
         pygame.key.set_repeat(0)
@@ -209,7 +209,9 @@ class GameRunner:
         input_tokens, output_tokens = self.agent.token_totals()
         invalid_inputs = self.agent.invalid_count()
         if invalid_inputs == 0:
-            invalid_inputs = sum(1 for turn in self.current_run_turns if turn.is_invalid)
+            invalid_inputs = sum(
+                1 for turn in self.current_run_turns if turn.is_invalid
+            )
 
         run_result = RunResult(
             run_index=self.current_run_index,

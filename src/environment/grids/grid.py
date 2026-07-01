@@ -27,7 +27,7 @@ class Grid:
         self.grid_width = width
         self.grid_height = height
 
-        self.grid: list[list[BackgroundEntity]] = [
+        self.background: list[list[BackgroundEntity]] = [
             [
                 self._create_cell(Position(x, y), fill_with_walls)
                 for x in range(self.grid_width)
@@ -42,7 +42,9 @@ class Grid:
 
     @property
     def goal(self) -> Optional[Goal]:
-        return self.grid[self.goal_pos.y][self.goal_pos.x] if self.goal_pos else None
+        return (
+            self.background[self.goal_pos.y][self.goal_pos.x] if self.goal_pos else None
+        )
 
     @property
     def actors(self) -> list[Actor]:
@@ -62,7 +64,7 @@ class Grid:
         return Wall(pos) if is_wall else Tile(pos)
 
     def _set_background_entity(self, entity: BackgroundEntity) -> None:
-        self.grid[entity.pos.y][entity.pos.x] = entity
+        self.background[entity.pos.y][entity.pos.x] = entity
 
     def _place_tile(self, pos: Position) -> None:
         self._set_background_entity(Tile(pos))
@@ -106,10 +108,10 @@ class Grid:
         return 0 <= pos.x < self.grid_width and 0 <= pos.y < self.grid_height
 
     def is_wall(self, pos: Position) -> bool:
-        return isinstance(self.grid[pos.y][pos.x], Wall)
+        return isinstance(self.background[pos.y][pos.x], Wall)
 
     def is_passable(self, pos: Position) -> bool:
-        return self.grid[pos.y][pos.x].is_passable
+        return self.background[pos.y][pos.x].is_passable
 
     def is_valid_movement_position(self, pos: Position) -> bool:
         return self.is_within_bounds(pos) and self.is_passable(pos)
@@ -152,10 +154,9 @@ class Grid:
         ]
 
     def can_actor_move_to(self, actor: Actor, position: Position) -> bool:
-        return (
-            self.is_valid_movement_position(position)
-            and not self.is_position_occupied(position, ignore=actor)
-        )
+        return self.is_valid_movement_position(
+            position
+        ) and not self.is_position_occupied(position, ignore=actor)
 
     def target_entity_in_direction(
         self,
@@ -166,9 +167,10 @@ class Grid:
         if not self.is_within_bounds(target_position):
             return None
 
-        return self.get_entity_at(target_position) or self.grid[
-            target_position.y
-        ][target_position.x]
+        return (
+            self.get_entity_at(target_position)
+            or self.background[target_position.y][target_position.x]
+        )
 
     def update(self) -> None:
         pass

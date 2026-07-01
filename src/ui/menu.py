@@ -56,7 +56,9 @@ class StartMenu:
             MenuOption("agent_type", "Agent Type", GameOptions.AGENT_TYPE),
             MenuOption("run_count", "Runs", GameOptions.RUN_COUNT_OPTIONS),
             MenuOption("mob_count", "Mobs", GameOptions.MOB_COUNT_OPTIONS, 2),
-            MenuOption("section_count", "Door Sections", GameOptions.SECTION_COUNT_OPTIONS, 1),
+            MenuOption(
+                "section_count", "Door Sections", GameOptions.SECTION_COUNT_OPTIONS, 1
+            ),
         ]
         self.selected_index = 0
 
